@@ -1,8 +1,8 @@
 'use client'
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchMenuItems } from '@/utils/api';
+import { fetchMenuItems } from '@/api/services/utils/api';
 import { useRouter } from 'next/navigation';
-import { saveOrder, loadUserOrders, deleteOrder, OrderData } from '@/utils/OrderUtils';
+import { saveOrder, loadUserOrders, deleteOrder, OrderData } from '@/api/services/utils/OrderUtils';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 

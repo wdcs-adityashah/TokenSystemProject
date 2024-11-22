@@ -1,9 +1,9 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchMenuItems } from '@/utils/api';
-import {  loadUserOrders, deleteOrder, OrderData } from '@/utils/OrderUtils';
+import { fetchMenuItems } from '@/api/services/utils/api';
+import {  loadUserOrders, deleteOrder, OrderData } from '@/api/services/utils/OrderUtils';
 import { io, Socket } from 'socket.io-client';
-import Modal from '@/components/Modal';
+import Modal from '@/components/Modal/Modal';
 import { useRouter } from 'next/navigation';
 interface MenuItem {
   _id: string;

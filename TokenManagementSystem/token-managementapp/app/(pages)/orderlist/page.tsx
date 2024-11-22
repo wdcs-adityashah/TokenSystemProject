@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import Header from '@/components/Header';
+import Header from '@/components/Header/Header';
 
 interface OrderData {
   itemName: string;

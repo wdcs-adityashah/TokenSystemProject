@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { fetchMenuItems, createMenuItem, updateMenuItem, deleteMenuItem } from '@/utils/api';
+import { fetchMenuItems, createMenuItem, updateMenuItem, deleteMenuItem } from '@/api/services/utils/api';
 
 interface MenuItem {
   _id: string;

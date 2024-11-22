@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { usercredentials } from '@/utils/api';
+import { usercredentials } from '@/api/services/utils/api';
 const UserDetails = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');

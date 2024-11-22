@@ -33,8 +33,6 @@ const UserTokens = () => {
     // Listen for new token events
     socketRef.current.on('new-token', (newToken) => {
       console.log('New token received:', newToken);
-      console.log('New tokensds received:', newToken);
-
       // Add the new token to the state
       setTokens(prevTokens => [...prevTokens, newToken]);
     });

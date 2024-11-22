@@ -1,8 +1,8 @@
 'use client'
 import React from 'react';
-import TokenDisplay from '@/components/TokenDisplay';
-import Header from '@/components/Header';
-import TableReservationstatus from '@/components/TableReservationstatus';
+import TokenDisplay from '@/components/TokenDisplay/TokenDisplay';
+import Header from '@/components/Header/Header';
+import TableReservationstatus from '@/components/TableReservation/TableReservationstatus';
 const Dashboard = () => {
 
   return (

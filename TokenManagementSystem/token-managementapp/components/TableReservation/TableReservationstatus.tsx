@@ -20,7 +20,6 @@ const TableReservationStatus = () => {
             console.log('Received table-reservation-updated event:', data);
             console.log('Received table-reservation-updated event:', data);
 
-
             setReservations(prev => {
                 const index = prev.findIndex(res => res.tableNumber === data.tableNumber);
                 if (index > -1) {
