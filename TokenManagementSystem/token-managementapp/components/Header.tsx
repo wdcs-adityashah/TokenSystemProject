@@ -17,9 +17,7 @@ const Header = () => {
         <Link href={"/billgenerated"} className="text-lg font-medium hover:text-gray-200 transition-colors">
           Invoices 
         </Link>
-        <Link href={"/billgenerated"} className="text-lg font-medium hover:text-gray-200 transition-colors">
-          Git Test 
-        </Link>
+        
       </nav>
     </header>
   );
