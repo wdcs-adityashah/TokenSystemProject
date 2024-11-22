@@ -13,6 +13,7 @@ const UserDetails = () => {
     e.preventDefault();
     try {
       const response = await usercredentials(email, password);
+      console.log(response);
       setMessage(response.message);
 
       // Redirect to dashboard on successful login

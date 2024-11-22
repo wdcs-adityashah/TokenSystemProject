@@ -8,6 +8,7 @@ const UserRegisteration = () => {
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       const response = await axios.post('/api/tokens', { name });
+      console.log(response);
       setToken(response.data.tokenNumber);
     };
   
