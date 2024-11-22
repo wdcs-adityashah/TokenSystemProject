@@ -19,6 +19,7 @@ const TableReservationStatus = () => {
         socket.current.on('table-reservation-updated', (data: Reservation) => {
             console.log('Received table-reservation-updated event:', data);
             console.log('Received tablesdsds-reservation-updated event:', data);
+            console.log('Received tablesdsds-reservation-updated event:', data);
 
             setReservations(prev => {
                 const index = prev.findIndex(res => res.tableNumber === data.tableNumber);

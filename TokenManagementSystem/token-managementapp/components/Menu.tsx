@@ -24,6 +24,9 @@ const Menu = () => {
       try {
         const items = await fetchMenuItems();
         console.log("Fetched Menu Items:", items); // Log fetched items
+        console.log("Fetched Menu Items1:", items); // Log fetched items
+        console.log("Fetched Menu Items2:", items); // Log fetched items
+
         setMenuItems(items);
       } catch (error) {
         console.error("Failed to fetch menu items:", error);
