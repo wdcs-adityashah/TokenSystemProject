@@ -51,11 +51,8 @@ const UserDetails = () => {
       console.log('API Response:', data); // Log the response
   
       if (response.ok) {
-        // Check if data.session and data.session.user are defined
         if (data.session && data.session.user) {
           localStorage.setItem('user', JSON.stringify({ name: data.session.user.name, email: data.session.user.email }));
-  
-          // Emit the userId to Socket.IO only if socket is defined
           if (socket) {
             socket.emit('register', data.userId);
           } else {

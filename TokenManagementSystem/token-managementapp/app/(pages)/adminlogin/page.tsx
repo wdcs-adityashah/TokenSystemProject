@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usercredentials } from '@/api/services/utils/api';
+import Cookies from 'js-cookie'; // Install js-cookie package
 
 const UserDetails = () => {
   const router = useRouter();
@@ -12,25 +13,22 @@ const UserDetails = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Call the usercredentials function to authenticate the user
       const response = await usercredentials(email, password);
 
-      // Check if the response contains a token
+
       if (response.token) {
-        // Store the token in local storage
-        localStorage.setItem('token', response.token);
+        // Store the token in a cookie
+        Cookies.set('token', response.token, { expires: 7 }); // Expires in 7 days
         setMessage("Login successful");
         router.push('/dashboard'); // Redirect to dashboard
       } else {
         // Handle the case where the response does not include a token
-        localStorage.removeItem('token'); // Remove the token if it exists
         setMessage(response.message);
-        router.push('/adminlogin'); // Redirect to admin login if no token
       }
     } catch (error) {
       console.error(error);
       // Remove the token in case of an error
-      localStorage.removeItem('token');
+      Cookies.remove('token'); // Remove token from cookie
       setMessage("An error occurred. Please try again.");
       router.push('/adminlogin'); // Redirect to admin login on error
     }

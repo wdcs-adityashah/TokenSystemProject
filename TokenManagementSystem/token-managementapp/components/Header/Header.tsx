@@ -3,10 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie'; // Import js-cookie to manage cookies
+
 const Header = () => {
   const router = useRouter();
   const handlelogout = () => {
-    localStorage.removeItem('token'); // Correctly remove the token
+    Cookies.remove('token'); // Correctly remove the token from cookies
     router.push('/adminlogin');
   }
   return (
