@@ -20,8 +20,8 @@ interface TableItemProps {
 interface Reservation {
   tableNumber: number;
   isReserved: boolean;
+  userId:string;
 }
-
 
 const TableItem: React.FC<TableItemProps> = ({ number, isSelected, onClick }) => {
   return (
@@ -47,12 +47,10 @@ const Table = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+
   const router = useRouter();
   useEffect(() => {
-    const storedReservedTables = localStorage.getItem('reservedTables');
-    if (storedReservedTables) {
-      setReservedTables(JSON.parse(storedReservedTables));
-    }
 
     socketRef.current = io('http://localhost:2000');
 
@@ -72,6 +70,14 @@ const Table = () => {
         return prev; // No change
       });
     });
+    const fetchReservations = async () => {
+      const response = await fetch('http://localhost:2000/api/tables/reservations');
+      const data = await response.json();
+      setReservations(data);
+      setReservedTables(data.filter(reservation => reservation.isReserved).map(reservation => reservation.tableNumber));
+    };
+
+    fetchReservations();
 
     return () => {
       socketRef.current?.disconnect();
@@ -115,6 +121,7 @@ const Table = () => {
       }
       else{
         setOrders({});
+        router.push('/login');
       }
       const storedOrders = localStorage.getItem('orders');
       if (storedOrders) {
@@ -138,50 +145,73 @@ const Table = () => {
     });
   };
 
-  const handleOrder = () => {
+  const handleOrder = async (tableNumber: number | null) => {
     if (!userName || selectedTable === null) return;
-  
+
     const existingOrders = orders[selectedTable] || [];
     const existingOrdersMap: { [key: string]: OrderData } = existingOrders.reduce((acc, order) => {
-      acc[order.itemId] = order;
-      return acc;
+        acc[order.itemId] = order;
+        return acc;
     }, {} as { [key: string]: OrderData });
-  
+
     menuItems.forEach(item => {
-      const qty = quantity[item._id] || 0;
-      if (qty > 0) {
-        if (existingOrdersMap[item._id]) {
-          existingOrdersMap[item._id].quantity = qty; // Set to the input value
-        } else {
-          const newOrder: OrderData = {
-            itemId: item._id,
-            itemName: item.itemName,
-            price: item.price,
-            quantity: qty,
-            quantityUnit: item.quantity,
-            tableNumber: selectedTable
-          };
-          existingOrdersMap[item._id] = newOrder; 
+        const qty = quantity[item._id] || 0;
+        if (qty > 0) {
+            if (existingOrdersMap[item._id]) {
+                existingOrdersMap[item._id].quantity = qty; // Set to the input value
+            } else {
+                const newOrder: OrderData = {
+                    itemId: item._id,
+                    itemName: item.itemName,
+                    price: item.price,
+                    quantity: qty,
+                    quantityUnit: item.quantity,
+                    tableNumber: selectedTable
+                };
+                existingOrdersMap[item._id] = newOrder; 
+            }
         }
-      }
     });
-  
+
     const updatedOrders = Object.values(existingOrdersMap);
-  
+    
     setOrders(prevOrders => ({
-      ...prevOrders,
-      [selectedTable]: updatedOrders
+        ...prevOrders,
+        [selectedTable]: updatedOrders
     }));
-  
+
     localStorage.setItem('orders', JSON.stringify({ ...orders, [selectedTable]: updatedOrders }));
-  
+
     setModalTitle("Success");
     setModalMessage("Items added to your order successfully!");
     setModalOpen(true);
-  };
+
+    try {
+        const response = await fetch('http://localhost:2000/api/tables/reserve-table', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ tableNumber: selectedTable, isProcessed: true, userId: userName }), // Ensure to include isProcessed and userId
+        });
+
+        if (!response.ok) {
+            console.error('Failed to update reservation status');
+            setModalTitle("Error");
+            setModalMessage("Failed to update reservation status.");
+            setModalOpen(true);
+            return;
+        }
+
+        const data: Reservation = await response.json();      
+        socketRef.current?.emit('table-reservation-updated', data);
+    } catch (error) {
+        console.error("Failed to complete order:", error);
+        setModalTitle("Error");
+        setModalMessage("Failed to complete order. Please try again.");
+    }
+};
   
-
-
   const handleCancelOrder = (index: number) => {
     if (userName && selectedTable !== null) {
       const currentOrders: OrderData[] = orders[selectedTable] || [];
@@ -222,7 +252,7 @@ const Table = () => {
     }
 
     if (!orders[tableNumber] || orders[tableNumber].length === 0) {
-      setModalTitle ("Error");
+      setModalTitle("Error");
       setModalMessage("No orders to complete.");
       setModalOpen(true);
       return;
@@ -231,29 +261,41 @@ const Table = () => {
     try {
       setModalTitle("Success");
       setModalMessage(`Order is ready for Table ${tableNumber}.`);
-      console.log('Emitting user-reserve-table for table:', tableNumber);
-
-      const isReserved = true; // Set this to true since the table is being reserved
-      const reservationData = { tableNumber, isReserved };
-      console.log("Emitting data:", reservationData); // Log the data being emitted
-      socketRef.current?.emit('table-reservation-updated', reservationData);
+      const response = await fetch('http://localhost:2000/api/tables/reserve-table', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tableNumber, isReserved: true }),
+      });
+      
+      if (!response.ok) {
+          console.error('Failed to update reservation status');
+          return;
+      }
+      const data: Reservation = await response.json();      
+      socketRef.current?.emit('table-reservation-updated', data);
     } catch (error) {
-      console.error("Failed to create tokens:", error);
+      console.error("Failed to complete order:", error);
       setModalTitle("Error");
-      setModalMessage("Failed to create tokens. Please try again.");
+      setModalMessage("Failed to complete order. Please try again.");
       setModalOpen(true);
     }
   };
 
+
   const handleLogout = () => {
     // Emit a logout event
     socketRef.current?.emit('user-logout', { userName });
-
-    // Clear local storage
     localStorage.removeItem('orders');
     localStorage.removeItem('reservedTables');
+    localStorage.removeItem('user');
+    setOrders({});
+    setReservedTables([]);
+    setSelectedTable(null);
+    setUserName(null);
+    setQuantity({}); // Reset quantity
 
-    // Redirect to user details page
     router.push('/userdetails');
 };
 

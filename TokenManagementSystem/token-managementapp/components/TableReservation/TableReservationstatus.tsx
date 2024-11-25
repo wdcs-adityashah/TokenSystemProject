@@ -4,6 +4,7 @@ import { io, Socket } from 'socket.io-client';
 interface Reservation {
     tableNumber: number;
     isReserved: boolean;
+    isProcessed: boolean;
 }
 
 const TableReservationStatus = () => {
@@ -11,38 +12,43 @@ const TableReservationStatus = () => {
     const socket = useRef<Socket | null>(null);
 
     useEffect(() => {
-
-    
         socket.current = io('http://localhost:2000');
-       
 
         socket.current.on('table-reservation-updated', (data: Reservation) => {
             console.log('Received table-reservation-updated event:', data);
-            console.log('Received table-reservation-updated event:', data);
-
             setReservations(prev => {
                 const index = prev.findIndex(res => res.tableNumber === data.tableNumber);
                 if (index > -1) {
                     const updatedReservations = [...prev];
-                    updatedReservations[index] = { ...updatedReservations[index], isReserved: data.isReserved };
+                    updatedReservations[index] = { ...updatedReservations[index], isReserved: data.isReserved,isProcessed:data.isProcessed };
                     return updatedReservations;
                 }
                 return [...prev, data]; // Add new reservation if it doesn't exist
             });
         });
         socket.current.on('user-logout', () => {
-            console.log('User  logged out. Fetching updated reservations...');
-            fetchReservations(); // Fetch the latest reservations
+            console.log('User  logged out, clearing reservations.');
+            setReservations([]); // Clear all reservations
         });
-    
-
         const fetchReservations = async () => {
-            const response = await fetch('http://localhost:2000/api/tables/reservations');
-            const data = await response.json();
-            setReservations(data);
+            try {
+                const response = await fetch('http://localhost:2000/api/tables/reservations');
+                const data = await response.json();
+
+                // Ensure data is an array
+                if (Array.isArray(data)) {
+                    setReservations(data);
+                } else {
+                    console.error('Expected an array but received:', data);
+                    setReservations([]); 
+                }
+            } catch (error) {
+                console.error('Failed to fetch reservations:', error);
+            }
         };
 
         fetchReservations();
+
         return () => {
             socket.current?.disconnect();
         };
@@ -56,30 +62,35 @@ const TableReservationStatus = () => {
             },
             body: JSON.stringify({ tableNumber, isReserved }),
         });
-        
+
         if (!response.ok) {
             console.error('Failed to update reservation status');
             return;
         }
-    
+
         const data: Reservation = await response.json();
-    
-        // Emit the reservation update event
         socket.current?.emit('table-reservation-updated', data);
-    
+
         setReservations(prev => {
             const index = prev.findIndex(res => res.tableNumber === data.tableNumber);
             if (index > -1) {
                 const updatedReservations = [...prev];
-                updatedReservations[index] = data; // Update reservation status
-                return updatedReservations;
+                updatedReservations[index] = {
+                    ...updatedReservations[index],
+                    isReserved: data.isReserved,
+                    isProcessed:isReserved // Set isProcessed to true when canceling
+                };               
+                 return updatedReservations;
             }
             return [...prev, data]; // Add new reservation if it doesn't exist
         });
     };
+
     const allTables = Array.from({ length: 10 }, (_, i) => i + 1);
     const reservedTableNumbers = reservations.filter(res => res.isReserved).map(res => res.tableNumber);
     const availableTables = allTables.filter(tableNumber => !reservedTableNumbers.includes(tableNumber));
+    // Filter reservations to show only those that are either reserved or processed
+    const filteredReservations = reservations.filter(reservation => reservation.isReserved || reservation.isProcessed);
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
@@ -90,31 +101,34 @@ const TableReservationStatus = () => {
                         <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
                             <th className="border px-4 py-2">Table Number</th>
                             <th className="border px-4 py-2">Reserved</th>
+                            <th className="border px-4 py-2">Processed</th> 
+
                             <th className="border px-4 py-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="text-gray-600 text-sm font-light">
-                   {reservedTableNumbers.length>0?(
-                    reservations.filter(reservation => reservation.isReserved).map(reservation => (
-                        <tr key={reservation.tableNumber} className="border-b hover:bg-gray-100">
-                            <td className="border px-4 py-2">{reservation.tableNumber}</td>
-                            <td className="border px-4 py-2">{reservation.isReserved ? 'Yes' : 'No'}</td>
-                            <td className="border px-4 py-2">
-                                <button
-                                    className={`bg-${reservation.isReserved ? 'red' : 'green'}-500 text-white px-4 py-2 rounded transition duration-300 hover:opacity-80`}
-                                    onClick={() => handleReserveTable(reservation.tableNumber, !reservation.isReserved)}
-                                >
-                                    {reservation.isReserved ? 'Cancel Reservation' : 'Reserve Table'}
-                                </button>
-                            </td>
-                        </tr >
-                    ))
-                   ):(
-                    <div className="col-span-full text-2xl my-3 mx-3 text-left text-red-500">
-                    No reserved TableNumbers here.
-                    </div>
-                   )}     
-                    
+                        {filteredReservations.length > 0 ? (
+                            filteredReservations.map(reservation => (
+                                <tr key={reservation.tableNumber} className="border-b hover:bg-gray-100">
+                                    <td className="border px-4 py-2">{reservation.tableNumber}</td>
+                                    <td className="border px-4 py-2">{reservation.isReserved ? 'Yes' : 'No'}</td>
+                                    <td className="border px-4 py-2">{reservation.isProcessed ? 'Yes' : 'No'}</td> {/* Show processed status */}
+                                
+                                    <td className="border px-4 py-2">
+                                        <button
+                                            className={`bg-${reservation.isReserved ? 'red' : 'green'}-500 text-white px-4 py-2 rounded transition duration-300 hover:opacity-80`}
+                                            onClick={() => handleReserveTable(reservation.tableNumber, !reservation.isReserved)}
+                                        >
+                                            {reservation.isReserved ? 'Cancel Reservation' : 'Reserve Table'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={4} className="text-center py-4 text-red-500">No reserved tables available.</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -140,7 +154,6 @@ const TableReservationStatus = () => {
             </div>
         </div>
     );
-
 };
 
 export default TableReservationStatus;

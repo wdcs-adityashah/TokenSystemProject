@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usercredentials } from '@/api/services/utils/api';
+
 const UserDetails = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -11,16 +12,27 @@ const UserDetails = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Call the usercredentials function to authenticate the user
       const response = await usercredentials(email, password);
-      setMessage(response.message);
 
-      // Redirect to dashboard on successful login
-      if (response.message === "Login successfull") {
-        router.push('/dashboard');
+      // Check if the response contains a token
+      if (response.token) {
+        // Store the token in local storage
+        localStorage.setItem('token', response.token);
+        setMessage("Login successful");
+        router.push('/dashboard'); // Redirect to dashboard
+      } else {
+        // Handle the case where the response does not include a token
+        localStorage.removeItem('token'); // Remove the token if it exists
+        setMessage(response.message);
+        router.push('/adminlogin'); // Redirect to admin login if no token
       }
     } catch (error) {
       console.error(error);
-      setMessage("Invalid Credentials");
+      // Remove the token in case of an error
+      localStorage.removeItem('token');
+      setMessage("An error occurred. Please try again.");
+      router.push('/adminlogin'); // Redirect to admin login on error
     }
   };
 
@@ -56,7 +68,7 @@ const UserDetails = () => {
         {message && (
           <p
             className={`mt-4 text-center text-sm font-medium ${
-              message === "Login successfull" ? "text-green-500" : "text-red-500"
+              message === "Login successful" ? "text-green-500" : "text-red-500"
             }`}
           >
             {message}
