@@ -102,8 +102,10 @@ const Table = () => {
 
     const loadedUser  = localStorage.getItem('user');
     if (loadedUser) {
-        const parsedUser  = JSON.parse(loadedUser );
+        const parsedUser  = JSON.parse(loadedUser);
         setUserName(parsedUser?.name);
+        socketRef.current?.emit('register', parsedUser.name);
+
         const userOrders = loadUserOrders(parsedUser?.name);
         const ordersByTable: { [key: number]: OrderData[] } = {};
         userOrders.forEach(order => {
@@ -146,7 +148,7 @@ const Table = () => {
   };
 
   const handleOrder = async (tableNumber: number | null) => {
-    if (!userName || selectedTable === null) return;
+    if (!userName || selectedTable === null || Object.keys(quantity).length === 0) return; // Check if quantity has items
 
     const existingOrders = orders[selectedTable] || [];
     const existingOrdersMap: { [key: string]: OrderData } = existingOrders.reduce((acc, order) => {
@@ -154,11 +156,14 @@ const Table = () => {
         return acc;
     }, {} as { [key: string]: OrderData });
 
+    let hasOrders = false; // Track if any orders are placed
+
     menuItems.forEach(item => {
         const qty = quantity[item._id] || 0;
         if (qty > 0) {
+            hasOrders = true; // Mark that we have orders
             if (existingOrdersMap[item._id]) {
-                existingOrdersMap[item._id].quantity = qty; // Set to the input value
+                existingOrdersMap[item._id].quantity += qty; // Update quantity
             } else {
                 const newOrder: OrderData = {
                     itemId: item._id,
@@ -173,6 +178,8 @@ const Table = () => {
         }
     });
 
+    if (!hasOrders) return; // If no orders were placed, exit early.
+
     const updatedOrders = Object.values(existingOrdersMap);
     
     setOrders(prevOrders => ({
@@ -180,26 +187,17 @@ const Table = () => {
         [selectedTable]: updatedOrders
     }));
 
-    localStorage.setItem('orders', JSON.stringify({ ...orders, [selectedTable]: updatedOrders }));
-
-    setModalTitle("Success");
-    setModalMessage("Items added to your order successfully!");
-    setModalOpen(true);
-
     try {
         const response = await fetch('http://localhost:2000/api/tables/reserve-table', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ tableNumber: selectedTable, isProcessed: true, userId: userName }), // Ensure to include isProcessed and userId
+            body: JSON.stringify({ tableNumber: selectedTable, isProcessed: true, userId: userName }),
         });
 
         if (!response.ok) {
             console.error('Failed to update reservation status');
-            setModalTitle("Error");
-            setModalMessage("Failed to update reservation status.");
-            setModalOpen(true);
             return;
         }
 
@@ -207,8 +205,6 @@ const Table = () => {
         socketRef.current?.emit('table-reservation-updated', data);
     } catch (error) {
         console.error("Failed to complete order:", error);
-        setModalTitle("Error");
-        setModalMessage("Failed to complete order. Please try again.");
     }
 };
   
@@ -375,6 +371,19 @@ const Table = () => {
 
       <h2 className="text-2xl font-bold text-center mb-6">Place Your Order</h2>
 
+
+      <h3 className="text-xl font-bold mt-6">Available Tables:</h3>
+      <div className="flex flex-wrap justify-center mt-4 mb-5" style={{ cursor: 'pointer' }}>
+        {tables.filter(tableNumber => !reservedTables.includes(tableNumber)).map((tableNumber) => (
+          <TableItem 
+            number={tableNumber} 
+            key={tableNumber}
+            isSelected={selectedTable === tableNumber} 
+            onClick={handleTableSelect} 
+          />
+        ))}
+      </div>
+
       <ul className="space-y-4">
             {menuItems.map((item) => (
               <li key={item._id} className="flex justify-between items-center p-4 border border-gray-200 rounded-md shadow hover:shadow-lg transition duration-200">
@@ -398,7 +407,7 @@ const Table = () => {
             ))}
           </ul>
           <button
-                  className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition duration-300"
+                  className="bg-yellow-500 text-white px-3 mt-4 py-1 rounded hover:bg-yellow-600 transition duration-300"
                   onClick={handleOrder}
                 >
                   Add to Order
@@ -423,17 +432,6 @@ const Table = () => {
 </ul>
 
 
-      <h3 className="text-xl font-bold mt-6">Available Tables:</h3>
-      <div className="flex flex-wrap justify-center mt-4" style={{ cursor: 'pointer' }}>
-        {tables.filter(tableNumber => !reservedTables.includes(tableNumber)).map((tableNumber) => (
-          <TableItem 
-            number={tableNumber} 
-            key={tableNumber}
-            isSelected={selectedTable === tableNumber} 
-            onClick={handleTableSelect} 
-          />
-        ))}
-      </div>
     </div>
     <div>
       <h4 className="text-xl font-bold mt-6">Reserved Tables:</h4>

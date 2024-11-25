@@ -47,10 +47,9 @@ const userSockets = {};
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id); // Log connected client ID
     socket.on('register', (userId) => {
-        userSockets[userId] = socket.id;
+        userSockets[userId] = socket.id; // Store the socket ID for the user
         console.log(`User  registered: ${userId}`);
     });
-
     // Listen for token emission from the frontend
     socket.on('emit-token', (token) => {
         console.log(`Received token from frontend: ${token}`);
@@ -58,7 +57,8 @@ io.on('connection', (socket) => {
     });
     socket.on('user-logout', (data) => {
         console.log(`User  logged out:`, data);
-        // Emit an event to notify all clients about the logout
+        delete userSockets[data.userName]; // Remove user from userSockets
+
         io.emit('user-logout', data); // Notify all clients
     });
     socket.on('disconnect', () => {
@@ -69,8 +69,8 @@ io.on('connection', (socket) => {
         console.log(`Received table-reservation-updated event:`, data);
         if (data && typeof data === 'object') {
             const { tableNumber, isReserved, userId } = data;
-            if (userId) {
-                io.to(userId).emit('table-reservation-updated', { tableNumber, isReserved,userId });
+            if (userId && userSockets[userId]) {
+                io.to(userSockets[userId]).emit('table-reservation-updated', { tableNumber, isReserved,userId });
             } else {
                 console.error(`User  ID ${userId} not found.`);
             }
@@ -78,19 +78,7 @@ io.on('connection', (socket) => {
         } else {
             console.error("Received data is not an object:", data);
         }
-        // if (data && typeof data === 'object') {
-        //     const { tableNumber, isReserved } = data;
-        //     console.log(`Table Number: ${tableNumber}, Is Reserved: ${isReserved}`);
-            
-        //     // Here you can update the database with the new reservation status
-        //     // For example, you could call a function to update the reservation in the database
-        //     // updateTableReservation(tableNumber, isReserved); // Implement this function as needed
-
-        //     // Emit the updated reservation status to all clients
-        //     // io.emit('table-reservation-updated', { tableNumber, isReserved });
-        // } else {
-        //     console.error("Received data is not an object:", data);
-        // }
+      
     });
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
