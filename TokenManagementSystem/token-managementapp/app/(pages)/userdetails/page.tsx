@@ -35,6 +35,7 @@ const UserDetails = () => {
 
   const handleUser   = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (name === '' || email === '' || password === '') {
       setError('Please fill in all fields');
       return;
@@ -53,6 +54,8 @@ const UserDetails = () => {
       if (response.ok) {
         if (data.session && data.session.user) {
           localStorage.setItem('user', JSON.stringify({ name: data.session.user.name, email: data.session.user.email }));
+          socket?.emit('join-room', data.session.user.name); // Join the user's room
+
           if (socket) {
             socket.emit('register', data.userId);
           } else {
