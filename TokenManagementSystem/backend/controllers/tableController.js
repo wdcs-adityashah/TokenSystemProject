@@ -1,6 +1,6 @@
 import TableReservation from "../models/TableReservation.js";
 import {io} from '../index.js';
-
+import User from "../models/User.js";
 export const UpdateTableReservation = async (req, res) => {
     const { tableNumber, isReserved, userId, isProcessed } = req.body;
 

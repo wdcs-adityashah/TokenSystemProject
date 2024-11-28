@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { type } from "os";
 const tableReservationSchema = new mongoose.Schema({
     tableNumber:{type:Number,required:true,unique:true},
     isReserved:{type:Boolean,default:false},

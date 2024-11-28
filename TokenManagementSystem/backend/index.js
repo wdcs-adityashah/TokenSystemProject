@@ -134,6 +134,8 @@ import menuRoutes from './routes/menuRoutes.js';
 import tokenRoutes from './routes/tokenRoutes.js';
 import mainuserRoutes from './routes/mainuserRoutes.js';
 import userRoutes from './routes/userRoutes.js'
+import tableorderRoutes from './routes/tableorderRoutes.js';
+import User from './models/User.js'
 import http from 'http';
 import { Server } from 'socket.io';
 import tableRoutes from './routes/tableRoutes.js'
@@ -157,6 +159,7 @@ app.use('/api/menu', menuRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/mainuser', mainuserRoutes);
 app.use('/api/tables',tableRoutes);
+app.use('/api/tableorder',tableorderRoutes)
 app.use('/api',userRoutes);
 // Create HTTP server and Socket.io server
 const server = http.createServer(app);
@@ -178,6 +181,11 @@ io.on('connection', (socket) => {
         userSockets[userId] = socket.id; // Store the socket ID for the user
         console.log(`User  registered: ${userId}`);
     });
+   // Listen for new orders
+   socket.on("new-order", (data) => {
+    console.log("Received order:", data);
+    io.emit("new-order", data); // Emit the order to all clients (admin)
+});
     // Listen for token emission from the frontend
     socket.on('emit-token', (token) => {
         console.log(`Received token from frontend: ${token}`);
@@ -193,10 +201,18 @@ io.on('connection', (socket) => {
         console.log('Client disconnected:', socket.id);
     });
 
-    socket.on('table-reservation-updated', (data) => {
+    socket.on('table-reservation-updated', async(data) => {
         console.log(`Received table-reservation-updated event:`, data);
         if (data && typeof data === 'object') {
             const { tableNumber, isReserved, userId } = data;
+            const user = await User.findOne({ username: userId });
+    if (user && user.isBlocked) {
+        console.error(`User  ${userId} is blocked and cannot reserve tables.`);
+        return; // Prevent further processing
+    }
+
+    // Proceed with the reservation update
+    io.emit('table-reservation-updated', { tableNumber, isReserved, userId });
             if (userId && userSockets[userId]) {
                 io.to(userSockets[userId]).emit('table-reservation-updated', { tableNumber, isReserved,userId });
             } else {
@@ -212,19 +228,14 @@ io.on('connection', (socket) => {
         console.log('Client disconnected:', socket.id);
     });
 });
-
-// Function to broadcast token completion status to clients
 export const broadcastTokenCompletion = (completedTokenNumber) => {
     const message = { status: 'completed', tokenNumber: completedTokenNumber };
     console.log(`Broadcasting token completion: ${completedTokenNumber}`); // Log the token number being broadcast
     io.emit('token-updated', message); // Emit to all connected clients
 };
 
-
-// Export the io instance for use in other modules
 export { io };
 
-// Start the server
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

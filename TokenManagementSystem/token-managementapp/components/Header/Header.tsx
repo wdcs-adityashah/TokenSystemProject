@@ -21,12 +21,16 @@ const Header = () => {
         <Link href={"/menulist"} className="text-lg font-medium hover:text-gray-200 transition-colors">
            Menu Management
         </Link>
-        <Link href={"/billgenerated"} className="text-lg font-medium hover:text-gray-200 transition-colors">
-          Invoices 
+        <Link href="/Tableorders" className="text-lg font-medium hover:text-gray-200 transition-colors">
+        TableOrders
+        </Link>
+        <Link href="/Totaluser" className="text-lg font-medium hover:text-gray-200 transition-colors">
+        Total User
         </Link>
         <button onClick={handlelogout} className="text-lg font-medium hover:text-gray-200 transition-colors">
           LogOut 
         </button>
+        
       </nav>
     </header>
   );

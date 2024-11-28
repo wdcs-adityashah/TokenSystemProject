@@ -27,8 +27,6 @@ const Order = () => {
   useEffect(() => {
     // Establish socket connection
     socketRef.current = io('http://localhost:2000');
-
-    // Listen for token updated notifications
     socketRef.current.on('token-updated', (data) => {
         console.log('Token updated event received:', data); // Log the received data
         setNotification(`Token #${data.tokenNumber} is ready for collection!`); // Set notification message
@@ -53,7 +51,7 @@ const Order = () => {
 
     loadMenuItems();
 
-    const loadedUser   = localStorage.getItem('user');
+    const loadedUser = localStorage.getItem('user');
     if (loadedUser  ) {
       const parsedUser = JSON.parse(loadedUser);
       setUserName(parsedUser.name);
@@ -155,7 +153,7 @@ const Order = () => {
               min="1"
               placeholder="Quantity"
               className="border border-gray-300 p-2 rounded w-20 mr-2"
-              value={quantity[item._id] || 1}
+              value={quantity[item._id] || 0}
               onChange={(e) => {
                 const qty = parseInt(e.target.value, 10);
                 setQuantity({ ...quantity, [item._id]: qty });
