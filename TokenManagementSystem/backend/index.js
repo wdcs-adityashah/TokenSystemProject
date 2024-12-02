@@ -161,6 +161,7 @@ app.use('/api/mainuser', mainuserRoutes);
 app.use('/api/tables',tableRoutes);
 app.use('/api/tableorder',tableorderRoutes)
 app.use('/api',userRoutes);
+
 // Create HTTP server and Socket.io server
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -178,10 +179,12 @@ const userSockets = {};
 io.on('connection', (socket) => {
     console.log('Client connected:', socket.id); // Log connected client ID
     socket.on('register', (userId) => {
-        userSockets[userId] = socket.id; // Store the socket ID for the user
-        console.log(`User  registered: ${userId}`);
-    });
-   // Listen for new orders
+        userSockets[userId] = socket.id;  // Map userId to this socket
+        console.log(`User registered with ID: ${userId}, Socket: ${socket.id}`);
+      });
+    
+   
+//    Listen for new orders
    socket.on("new-order", (data) => {
     console.log("Received order:", data);
     io.emit("new-order", data); // Emit the order to all clients (admin)
@@ -197,16 +200,13 @@ io.on('connection', (socket) => {
 
         io.emit('user-logout', data); // Notify all clients
     });
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
 
     socket.on('table-reservation-updated', async(data) => {
         console.log(`Received table-reservation-updated event:`, data);
         if (data && typeof data === 'object') {
             const { tableNumber, isReserved, userId } = data;
             const user = await User.findOne({ username: userId });
-    if (user && user.isBlocked) {
+    if (user && user.blocked) {
         console.error(`User  ${userId} is blocked and cannot reserve tables.`);
         return; // Prevent further processing
     }
@@ -225,8 +225,12 @@ io.on('connection', (socket) => {
       
     });
     socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
+        const userId = Object.keys(userSockets).find(key => userSockets[key] === socket.id);
+        if (userId) {
+          delete userSockets[userId];  // Remove mapping on disconnect
+          console.log(`User ${userId} disconnected`);
+        }
+      });
 });
 export const broadcastTokenCompletion = (completedTokenNumber) => {
     const message = { status: 'completed', tokenNumber: completedTokenNumber };

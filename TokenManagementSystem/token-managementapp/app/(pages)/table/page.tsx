@@ -589,6 +589,9 @@ const TableItem: React.FC<TableItemProps> = ({
 };
 
 const Table = () => {
+
+  const router = useRouter();
+
   const {addOrder} = useOrderContext();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -607,10 +610,40 @@ const Table = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]); // Store blocked users' emails or IDs
 
- const userReservation = reservations?.filter((data:any)=>data.userId == userName);
- console.log(userReservation,"userReservation")
+  const userReservation = reservations?.filter((data:any)=>data.userId == userName);
+  console.log(userReservation,"userReservation");
 
-  const router = useRouter();
+  useEffect(() => {
+    const checkBlockedStatus = () => {
+        const blockedUsers = JSON.parse(localStorage.getItem("blockedUsers") || "[]");
+        const loadedUser  = localStorage.getItem("user");
+
+        if (loadedUser ) {
+            const parsedUser  = JSON.parse(loadedUser );
+            setUserName(parsedUser.name);
+             console.log(parsedUser);
+            // Check if the current user is blocked
+            if (blockedUsers.includes(parsedUser.id)) { // Assuming you store user ID
+              localStorage.removeItem('token');
+                alert("You have been blocked. Redirecting to login.");
+                router.push("/login");
+            }
+        } else {
+            router.push("/login");
+        }
+    };
+
+    // Check blocked status on initial mount
+    checkBlockedStatus();
+
+    // Listen for storage changes
+    window.addEventListener("storage", checkBlockedStatus);
+
+    return () => {
+        window.removeEventListener("storage", checkBlockedStatus);
+    };
+}, [router]);
+
   useEffect(() => {
     const fetchBlockedUsers = async () => {
         try {
@@ -624,7 +657,8 @@ const Table = () => {
 
     fetchBlockedUsers();
 }, []);
-console.log(blockedUsers);
+
+
   useEffect(() => {
     const storedOrders = localStorage.getItem("orders");
     if (storedOrders) {
@@ -734,9 +768,6 @@ console.log(blockedUsers);
   };
   const isBlocked = userName ? blockedUsers.includes(userName) : false; // Check if the user is blocked
  // Debugging Logs
- console.log("User  Name:", userName);
- console.log("Blocked Users:", blockedUsers);
- console.log("Is Blocked:", isBlocked);  
  const handleOrder = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     if (isBlocked) {
@@ -822,12 +853,9 @@ console.log(blockedUsers);
     }
 
     const data = await response.json();
-    console.log("Order added successfully:", data);
-    // Emit the new order to the socket for real-time updates
     if (socketRef.current?.connected) {
 
         socketRef.current.emit("new-order", data);
-        console.log("Order emited successfully:", data);
 
     } else {
         console.error("Socket not connected.");
@@ -977,6 +1005,7 @@ console.log(blockedUsers);
     localStorage.removeItem("orders");
     localStorage.removeItem("reservedTables");
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     setOrders({});
     setReservedTables([]);
     setSelectedTable(null);
@@ -985,10 +1014,6 @@ console.log(blockedUsers);
 
     router.push("/userdetails");
   };
-
-  console.log(reservedTables,"resever");
-  console.log(reservations,"reservations")
-
   const handleTableSelect = (tableNumber: number) => {
     setSelectedTable(tableNumber);
     const existingOrders = orders[tableNumber] || [];

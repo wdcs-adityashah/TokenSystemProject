@@ -20,15 +20,19 @@ export const registerUser  = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
         const newUser  = new User({ name, email, password: hashedPassword }); // Save the hashed password
         const savedUser  = await newUser .save();
+        const token = jwt.sign({ id: savedUser._id, name: savedUser.name, savedUser: savedUser.email }, SECRET_KEY, { expiresIn: '1h' });
+
        // Return the user data in the expected format
        res.status(201).json({
         userId: savedUser._id, // Include userId in the response
         session: {
             user: {
+                id: savedUser._id,
                 name: savedUser.name,
                 email: savedUser.email
             }
-        }
+        },
+        token
     });
     } catch (err) {
         console.error('Error during registration:', err);
@@ -91,7 +95,21 @@ export const getUsers = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 };
-
+export const UnblockUser  = async (req, res) => {
+    const { id } = req.params; // Get user ID from the request parameters
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: "User  not found" });
+        }
+        user.blocked = false; // Set the blocked field to true
+        await user.save(); // Save the updated user
+        res.status(200).json({ message: "User  Unblocked successfully" });
+    } catch (error) {
+        console.error("Error blocking user:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
 export const getBlockedUsers = async(req,res)=>{
     try {
         const blockedUsers = await User.find({ blocked: true }); // Fetch all blocked users

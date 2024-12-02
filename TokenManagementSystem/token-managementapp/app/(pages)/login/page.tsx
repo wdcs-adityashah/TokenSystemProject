@@ -39,8 +39,8 @@ const Login = () => {
       const data = await response.json();
       if (response.ok) {
         // Store the token in local storage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify({ name: data.session.user.name, email: data.session.user.email }));
+        localStorage.setItem('user', JSON.stringify({ name: data.session.user.name, email: data.session.user.email,id: data.session.user.id// Store user ID
+        }));
 
         // Emit the userId to Socket.IO if needed
         if (socket) {

@@ -12,6 +12,11 @@ const UserDetails = () => {
   const [socket, setSocket] = useState<Socket | null>(null); // Define socket type
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/userdetails'); // Redirect to login if token is not present
+    }
+
     // Initialize the socket connection
     const newSocket = io('http://localhost:2000'); // Replace with your server URL
     setSocket(newSocket);
@@ -52,14 +57,23 @@ const UserDetails = () => {
       console.log('API Response:', data); // Log the response
   
       if (response.ok) {
-        if (data.session && data.session.user) {
-          localStorage.setItem('user', JSON.stringify({ name: data.session.user.name, email: data.session.user.email }));
-          socket?.emit('join-room', data.session.user.name); // Join the user's room
+        localStorage.setItem('token', data.token);
 
-          if (socket) {
-            socket.emit('register', data.userId);
+        if (data.session && data.session.user) {
+          localStorage.setItem('user', JSON.stringify({
+            id: data.session.user.id, // Store user ID
+            name: data.session.user.name,
+            email: data.session.user.email,
+          }));
+          // socket?.emit('join-room', data.session.user.name); // Join the user's room
+          // if (data.token) {
+          //   localStorage.setItem('token', data.token); // Store the token
+          // }
+
+          if (socket && socket.connected) {
+            socket.emit('register', data.userId); // Emit userId after registration
           } else {
-            console.error('Socket is not initialized');
+            console.error('Socket is not initialized or not connected');
           }
           router.push('/table'); // Redirect to the /table page
         } else {
