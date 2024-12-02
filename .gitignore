@@ -34,3 +34,65 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts.gitignore
+
+
+
+ const handleLogout = async () => {
+    try {
+      socketRef.current?.emit("user-logout", { userName });
+      const tablesToUnreserve = reservations
+        .filter(
+          (reservation) =>
+            reservation.userId === userName && reservation.isReserved
+        )
+        .map((reservation) => reservation.tableNumber);
+
+      console.log("Tables to unreserve:", tablesToUnreserve); // Debugging log
+
+      const unreservePromises = tablesToUnreserve.map(async (tableNumber) => {
+        const response = await fetch(
+          "http://localhost:2000/api/tables/reserve-table",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ tableNumber, isReserved: false }),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `Failed to update reservation status for table ${tableNumber}:`,
+            errorText
+          );
+          throw new Error(
+            `Failed to update reservation status for table ${tableNumber}`
+          );
+        }
+
+        const data: Reservation = await response.json();
+        socketRef.current?.emit("table-reservation-updated", data);
+      });
+
+      await Promise.all(unreservePromises);
+
+      localStorage.removeItem("orders");
+      localStorage.removeItem("reservedTables");
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      setOrders({});
+      setReservedTables([]);
+      setSelectedTable(null);
+      setUserName(null);
+      setQuantity({}); // Reset quantity
+
+      router.push("/userdetails");
+    } catch (error) {
+      console.error("Failed to complete logout:", error);
+      setModalTitle("Error");
+      setModalMessage("Failed to log out. Please try again.");
+      setModalOpen(true);
+    }
+  };

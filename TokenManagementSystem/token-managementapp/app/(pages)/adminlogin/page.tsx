@@ -15,7 +15,6 @@ const UserDetails = () => {
     try {
       const response = await usercredentials(email, password);
 
-
       if (response.token) {
         // Store the token in a cookie
         Cookies.set('token', response.token, { expires: 7 }); // Expires in 7 days

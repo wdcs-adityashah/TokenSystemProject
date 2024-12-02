@@ -6,6 +6,7 @@ export interface OrderData {
   timestamp?: string;   
   quantityUnit: string;  
   tableNumber?: number; 
+  userId?: string; // Add this line if userId should be part of OrderData
 
 }
 export const saveOrder = (username: string, order: OrderData) => {

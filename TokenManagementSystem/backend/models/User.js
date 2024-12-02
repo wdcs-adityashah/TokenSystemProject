@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
     blocked: {
         type: Boolean,
         default: false, // Default value is false
-    }
+    },
 }, {
     timestamps: true,
 });

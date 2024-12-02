@@ -204,7 +204,7 @@ io.on('connection', (socket) => {
     socket.on('table-reservation-updated', async(data) => {
         console.log(`Received table-reservation-updated event:`, data);
         if (data && typeof data === 'object') {
-            const { tableNumber, isReserved, userId } = data;
+            const { tableNumber, isReserved, userId,isProcessed } = data;
             const user = await User.findOne({ username: userId });
     if (user && user.blocked) {
         console.error(`User  ${userId} is blocked and cannot reserve tables.`);
@@ -212,9 +212,9 @@ io.on('connection', (socket) => {
     }
 
     // Proceed with the reservation update
-    io.emit('table-reservation-updated', { tableNumber, isReserved, userId });
+    io.emit('table-reservation-updated', { tableNumber, isReserved,isProcessed, userId });
             if (userId && userSockets[userId]) {
-                io.to(userSockets[userId]).emit('table-reservation-updated', { tableNumber, isReserved,userId });
+                io.to(userSockets[userId]).emit('table-reservation-updated', { tableNumber,isProcessed, isReserved,userId });
             } else {
                 console.error(`User  ID ${userId} not found.`);
             }
