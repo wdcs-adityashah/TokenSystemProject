@@ -73,9 +73,7 @@ const Table = () => {
         const parsedUser = JSON.parse(loadedUser);
         setUserName(parsedUser.name);
         console.log(parsedUser);
-        // Check if the current user is blocked
         if (blockedUsers.includes(parsedUser.id)) {
-          // Assuming you store user ID
           localStorage.removeItem("token");
           alert("You have been blocked. Redirecting to login.");
           router.push("/login");
@@ -85,10 +83,8 @@ const Table = () => {
       }
     };
 
-    // Check blocked status on initial mount
     checkBlockedStatus();
 
-    // Listen for storage changes
     window.addEventListener("storage", checkBlockedStatus);
 
     return () => {
@@ -101,7 +97,7 @@ const Table = () => {
       try {
         const response = await fetch("http://localhost:2000/api/blocked-users");
         const data = await response.json();
-        setBlockedUsers(data.map((user) => user.name)); // Assuming you want to store emails
+        setBlockedUsers(data.map((user) => user.name)); 
       } catch (error) {
         console.error("Error fetching blocked users:", error);
       }
@@ -119,15 +115,15 @@ const Table = () => {
         if (data.isReserved && index === -1) {
           const updatedTables = [...prev, data.tableNumber];
           localStorage.setItem("reservedTables", JSON.stringify(updatedTables));
-          return updatedTables; // Update state with the new list of reserved tables
+          return updatedTables; 
         } else if (!data.isReserved && index > -1) {
           const updatedTables = prev.filter(
             (table) => table !== data.tableNumber
           );
-          localStorage.setItem("reservedTables", JSON.stringify(updatedTables)); // Update localStorage
-          return updatedTables; // Update state with the new list of reserved tables
+          localStorage.setItem("reservedTables", JSON.stringify(updatedTables)); 
+          return updatedTables; 
         }
-        return prev; // No change
+        return prev; 
       });
     });
     const fetchReservations = async () => {
@@ -135,7 +131,7 @@ const Table = () => {
         "http://localhost:2000/api/tables/reservations"
       );
       const data = await response.json();
-      setReservations(data || []); // Ensure data is an array
+      setReservations(data || []); 
       setReservedTables(
         data
           .filter((reservation: Reservation) => reservation.isReserved)
@@ -210,8 +206,7 @@ const Table = () => {
       return newState;
     });
   };
-  const isBlocked = userName ? blockedUsers.includes(userName) : false; // Check if the user is blocked
-  // Debugging Logs
+  const isBlocked = userName ? blockedUsers.includes(userName) : false;
   const handleOrderClick = async (
     event: React.MouseEvent<HTMLButtonElement>
   ) => {
@@ -278,20 +273,17 @@ const Table = () => {
     if (selectedTable !== null) {
       const order = orders[selectedTable];
       if (order && order.length > 0) {
-        // Calculate total amount
         const totalAmount = order.reduce(
           (total, o) => total + o.price * o.quantity,
           0
         );
 
-        // Create formatted invoice details
         const invoiceDetails = order.map((o) => (
           <div key={o.itemId}>
             {o.itemName} - ₹{o.price} x {o.quantity} {o.quantityUnit}
           </div>
         ));
 
-        // Add spacing and total amount
         const formattedInvoice = (
           <div>
             <div>Invoice for Table {selectedTable}:</div>
@@ -337,7 +329,7 @@ const Table = () => {
             <button
               onClick={handleCompleteOrderClick}
               className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition duration-300"
-              disabled={isBlocked} // Disable if blocked
+              disabled={isBlocked} 
             >
               Complete Order
             </button>
@@ -364,13 +356,13 @@ const Table = () => {
             tables={Array.from({ length: 10 }, (_, i) => i + 1).filter(
               (tableNumber) => !reservedTables.includes(tableNumber)
             )}
-            reservedTables={reservedTables} // Add this line
+            reservedTables={reservedTables}
             selectedTable={selectedTable}
             onTableSelect={handleTableSelectClick}
             reservations={reservations}
             userName={userName}
             isBlocked={isBlocked}
-            disabled={isBlocked} // Pass the disabled prop
+            disabled={isBlocked}
           />
 
           <ul className="space-y-4">
@@ -387,12 +379,12 @@ const Table = () => {
           <button
             className="bg-yellow-500 text-white px-3 mt-4 py-1 rounded hover:bg-yellow-600 transition duration-300"
             onClick={handleOrderClick}
-            disabled={isBlocked} // Disable if blocked
+            disabled={isBlocked} 
           >
             Add to Order
           </button>
           <OrderSummary
-            orders={selectedTable !== null ? orders[selectedTable] || [] : []} // Ensure it defaults to an empty array
+            orders={selectedTable !== null ? orders[selectedTable] || [] : []} 
             onCancelOrder={(index) => handleCancelOrderClick(index)}
             selectedTable={selectedTable}
           />

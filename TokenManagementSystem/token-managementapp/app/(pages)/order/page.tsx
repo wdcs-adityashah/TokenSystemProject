@@ -25,7 +25,6 @@ const Order = () => {
 
 
   useEffect(() => {
-    // Establish socket connection
     socketRef.current = io('http://localhost:2000');
     socketRef.current.on('token-updated', (data) => {
         console.log('Token updated event received:', data); // Log the received data
@@ -36,7 +35,6 @@ const Order = () => {
         socketRef.current?.disconnect(); // Cleanup on unmount
     };
 }, []);
-  // Load menu items and user data
   useEffect(() => {
     const loadMenuItems = async () => {
       try {
@@ -62,7 +60,7 @@ const Order = () => {
   const handleOrder = (item: MenuItem) => {
     if (!userName) return;
 
-    const qty = quantity[item._id] || 1; // Default to 1 if no quantity provided
+    const qty = quantity[item._id] || 1; 
     const existingOrderIndex = orders.findIndex(order => order.itemName === item.itemName);
     
     const newOrder: OrderData = {
@@ -74,9 +72,8 @@ const Order = () => {
     };
 
     if (existingOrderIndex > -1) {
-      // Update existing order
       const updatedOrders = [...orders];
-      updatedOrders[existingOrderIndex].quantity += qty; // Aggregate quantity
+      updatedOrders[existingOrderIndex].quantity += qty; 
       setOrders(updatedOrders);
       saveOrder(userName, updatedOrders[existingOrderIndex]);
       alert("Quantity updated successfully!");
@@ -112,7 +109,7 @@ const Order = () => {
         const response = await axios.post('http://localhost:2000/api/tokens', { menuItemIds });
         const token = response.data;
         alert(`Your order is complete. Token #${token.tokenNumber} generated.`);
-        socketRef.current?.emit('new-token', token); // Emit the new token event
+        socketRef.current?.emit('new-token', token);
         router.push('/'); 
         } 
         catch (error) {

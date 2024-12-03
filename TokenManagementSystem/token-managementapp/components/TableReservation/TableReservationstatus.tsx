@@ -33,12 +33,12 @@ const TableReservationStatus = () => {
           };
           return updatedReservations;
         }
-        return [...prev, data]; // Add new reservation if it doesn't exist
+        return [...prev, data]; 
       });
     });
     socket.current.on("user-logout", () => {
       console.log("User  logged out, clearing reservations.");
-      setReservations([]); // Clear all reservations
+      setReservations([]); 
     });
 
     const fetchReservations = async () => {
@@ -48,7 +48,6 @@ const TableReservationStatus = () => {
         );
         const data = await response.json();
 
-        // Ensure data is an array
         if (Array.isArray(data)) {
           setReservations(data);
         } else {
@@ -99,11 +98,11 @@ const TableReservationStatus = () => {
         updatedReservations[index] = {
           ...updatedReservations[index],
           isReserved: data.isReserved,
-          isProcessed: isReserved, // Set isProcessed to true when canceling
+          isProcessed: isReserved, 
         };
         return updatedReservations;
       }
-      return [...prev, data]; // Add new reservation if it doesn't exist
+      return [...prev, data]; 
     });
   };
 
@@ -114,7 +113,6 @@ const TableReservationStatus = () => {
   const availableTables = allTables.filter(
     (tableNumber) => !reservedTableNumbers.includes(tableNumber)
   );
-  // Filter reservations to show only those that are either reserved or processed
   const filteredReservations = reservations.filter(
     (reservation) => reservation.isReserved || reservation.isProcessed
   );
@@ -152,7 +150,6 @@ const TableReservationStatus = () => {
                   <td className="border px-4 py-2">
                     {reservation.isProcessed ? "Yes" : "No"}
                   </td>
-                  {/* Show processed status */}
                   <td className="border px-4 py-2">
                     <button
                       className={`bg-${
