@@ -10,9 +10,9 @@ export const fetchMenuItems = async () => {
 
 export const createMenuItem = async (item: { itemName: string; price: number }) => {
   try {
-    const payload = { items: [item] }; // Create payload
-    console.log('Sending payload:', payload); // Log payload
-    const response = await api.post('/menu', payload); // Send request
+    const payload = { items: [item] }; 
+    console.log('Sending payload:', payload);
+    const response = await api.post('/menu', payload);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -51,17 +51,17 @@ export const fetchActiveTokens = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching active tokens:', error);
-    throw error; // Rethrow error to handle it in the calling code if needed
+    throw error; 
   }
 };
-// Example function to update the token status from the frontend
+
 export const completeToken = async (tokenId:number) => {
     try {
         const response = await api.patch('/tokens/update-status', { tokenId, status: 'completed' });
         return response.data;
     } catch (error) {
         console.error("Error completing token:", error);
-        throw error; // Handle or throw the error as necessary
+        throw error;
     }
 };
 export const usercredentials = async (email: string, password: string) => {

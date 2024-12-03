@@ -4,20 +4,16 @@ export const getMenuItems = async (req, res) => {
     try {
         const menuItems = await MenuItem.find();
         
-        // If no menu items are found, return the default menu items
         if (menuItems.length === 0) {
-            return res.json(defaultMenuItems); // Return default items only
+            return res.json(defaultMenuItems);
         }
 
-        // Return the found menu items
         res.json(menuItems);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// Default menu items
-// Default menu items
 export const defaultMenuItems = [
     { itemName: 'Fafda', price: 20, quantity: 'pieces' },
     { itemName: 'Gathiya', price: 30, quantity: 'grams' },
@@ -26,11 +22,9 @@ export const defaultMenuItems = [
     { itemName: 'Gulabjamun', price: 50, quantity: 'pieces' },
 ];
 
-// Create, update, and delete functions remain unchanged
 export const createMenuItem = async (req, res) => {
-    const { itemName, price, quantity } = req.body; // Ensure you extract quantity
+    const { itemName, price, quantity } = req.body; 
 
-    // Validate incoming data
     if (!itemName || typeof itemName !== 'string' || itemName.trim() === '') {
         return res.status(400).json({ message: "Invalid item name." });
     }
@@ -39,13 +33,12 @@ export const createMenuItem = async (req, res) => {
         return res.status(400).json({ message: "Invalid price." });
     }
 
-    if (!quantity || typeof quantity !== 'string' || quantity.trim() === '') { // Check quantity
+    if (!quantity || typeof quantity !== 'string' || quantity.trim() === '') {
         return res.status(400).json({ message: "Invalid quantity." });
     }
 
-    // Attempt to save the valid items to the database
     try {
-        const newItem = new MenuItem({ itemName, price, quantity }); // Save as quantity
+        const newItem = new MenuItem({ itemName, price, quantity });
         await newItem.save();
         res.status(201).json(newItem);
 
@@ -56,7 +49,7 @@ export const createMenuItem = async (req, res) => {
 
 
 export const updateMenuItem = async (req, res) => {
-    const { id } = req.params; // Destructure id from req.params
+    const { id } = req.params;
     const updatedData = req.body;
 
     try {
@@ -66,19 +59,19 @@ export const updateMenuItem = async (req, res) => {
         }
         res.status(200).json(updatedItem);
     } catch (error) {
-        console.error('Error updating item:', error); // More descriptive log
+        console.error('Error updating item:', error); 
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 
 export const deleteMenuItem = async (req, res) => {
-    const { id } = req.params; // Get id from params
+    const { id } = req.params;
     try {
         const deletedItem = await MenuItem.findByIdAndDelete(id);
         if (!deletedItem) {
             return res.status(404).json({ message: "Item not found" });
         }
-        res.status(204).send(); // No content
+        res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

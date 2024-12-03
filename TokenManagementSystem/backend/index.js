@@ -146,7 +146,6 @@ connectDB();
 const app = express();
 const PORT = 2000;
 
-// CORS configuration
 app.use(cors({
     origin: 'http://localhost:3000',
     credentials: true,
@@ -154,7 +153,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// API routes
 app.use('/api/menu', menuRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/mainuser', mainuserRoutes);
@@ -162,7 +160,6 @@ app.use('/api/tables',tableRoutes);
 app.use('/api/tableorder',tableorderRoutes)
 app.use('/api',userRoutes);
 
-// Create HTTP server and Socket.io server
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
@@ -170,35 +167,30 @@ const io = new Server(server, {
         credentials: true,
     }
 });
-// Store user socket IDs
 const userSockets = {};
 
 
 
-// Socket.io connection setup
 io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id); // Log connected client ID
+    console.log('Client connected:', socket.id); 
     socket.on('register', (userId) => {
-        userSockets[userId] = socket.id;  // Map userId to this socket
+        userSockets[userId] = socket.id; 
         console.log(`User registered with ID: ${userId}, Socket: ${socket.id}`);
       });
     
    
-//    Listen for new orders
    socket.on("new-order", (data) => {
     console.log("Received order:", data);
-    io.emit("new-order", data); // Emit the order to all clients (admin)
+    io.emit("new-order", data); 
 });
-    // Listen for token emission from the frontend
     socket.on('emit-token', (token) => {
         console.log(`Received token from frontend: ${token}`);
         io.emit('receive-token', token);
     });
     socket.on('user-logout', (data) => {
         console.log(`User  logged out:`, data);
-        delete userSockets[data.userName]; // Remove user from userSockets
-
-        io.emit('user-logout', data); // Notify all clients
+        delete userSockets[data.userName]; 
+        io.emit('user-logout', data); 
     });
 
     socket.on('table-reservation-updated', async(data) => {
@@ -208,17 +200,15 @@ io.on('connection', (socket) => {
             const user = await User.findOne({ username: userId });
     if (user && user.blocked) {
         console.error(`User  ${userId} is blocked and cannot reserve tables.`);
-        return; // Prevent further processing
+        return; 
     }
 
-    // Proceed with the reservation update
     io.emit('table-reservation-updated', { tableNumber, isReserved,isProcessed, userId });
             if (userId && userSockets[userId]) {
                 io.to(userSockets[userId]).emit('table-reservation-updated', { tableNumber,isProcessed, isReserved,userId });
             } else {
                 console.error(`User  ID ${userId} not found.`);
             }
-            // io.emit('table-reservation-updated', { tableNumber, isReserved });
         } else {
             console.error("Received data is not an object:", data);
         }
@@ -227,15 +217,15 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const userId = Object.keys(userSockets).find(key => userSockets[key] === socket.id);
         if (userId) {
-          delete userSockets[userId];  // Remove mapping on disconnect
+          delete userSockets[userId];  
           console.log(`User ${userId} disconnected`);
         }
       });
 });
 export const broadcastTokenCompletion = (completedTokenNumber) => {
     const message = { status: 'completed', tokenNumber: completedTokenNumber };
-    console.log(`Broadcasting token completion: ${completedTokenNumber}`); // Log the token number being broadcast
-    io.emit('token-updated', message); // Emit to all connected clients
+    console.log(`Broadcasting token completion: ${completedTokenNumber}`); 
+    io.emit('token-updated', message);
 };
 
 export { io };
